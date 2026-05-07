@@ -1,0 +1,40 @@
+{
+  "current_price_at_creation": 250.00,
+  "created_at": "2026-01-01",
+  "principal_tao": 100,
+  "blended_apy": 0.1862,
+  "confirmation_hours": 24,
+  "conviction_hold_pct": 25,
+  "levels": [
+    {
+      "name": "SAFE",
+      "above": 230,
+      "action": "none",
+      "unstake_pct": 0
+    },
+    {
+      "name": "CAUTION",
+      "range": [205, 230],
+      "action": "alert_only",
+      "unstake_pct": 0
+    },
+    {
+      "name": "DEFENSIVE",
+      "range": [165, 205],
+      "action": "alert_and_unstake",
+      "unstake_pct": 25
+    },
+    {
+      "name": "EXIT",
+      "range": [130, 165],
+      "action": "alert_and_unstake",
+      "unstake_pct": 50
+    },
+    {
+      "name": "EMERGENCY",
+      "below": 130,
+      "action": "emergency_exit",
+      "unstake_pct": 75
+    }
+  ]
+}

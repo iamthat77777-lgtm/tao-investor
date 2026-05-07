@@ -1,0 +1,26 @@
+{
+  "wallet_name": "my_wallet",
+  "hotkey": "default",
+  "wallet_path": "~/.bittensor/wallets/",
+  "coldkey_address": "YOUR_COLDKEY_SS58",
+  "hotkey_address": "YOUR_HOTKEY_SS58",
+  "cost_basis_gbp": 0,
+  "total_tao_deployed": 0,
+  "strategy": "optimized_3pos_v1",
+  "allocations": [
+    {"name": "Chutes", "subnet": 64, "percentage": 42.0, "description": "AI inference - highest emissions, auto-staking revenue"},
+    {"name": "Targon", "subnet": 4, "percentage": 31.0, "description": "Text generation - strong growth, solid emissions"},
+    {"name": "Root", "subnet": 0, "percentage": 27.0, "description": "Base TAO yield ~18-20% APY, safe anchor position"}
+  ],
+  "alerts": {
+    "telegram_bot_token": "YOUR_BOT_TOKEN_HERE",
+    "telegram_chat_id": "YOUR_CHAT_ID_HERE",
+    "apy_drop_threshold_percent": 20,
+    "rebalance_drift_percent": 5,
+    "profit_alert_gbp": 100
+  },
+  "monitoring": {
+    "check_interval_minutes": 60,
+    "daily_summary_hour": 9
+  }
+}

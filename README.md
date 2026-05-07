@@ -1,0 +1,142 @@
+# TAO Investor
+
+Automated monitoring and alert bot for a Bittensor (TAO) staking position. Sends Telegram alerts on price moves, daily summaries, and a 3-hour portfolio snapshot. Includes a local HTML dashboard with price/portfolio/staking-return charts.
+
+## What it does
+
+Five scheduled tasks run continuously:
+
+| Task | When | What it does |
+|---|---|---|
+| `monitor.py` | Every hour | Checks wallet balance + total stake, logs to JSON |
+| `morning_alert.py` | 7:00 AM daily | Morning portfolio report with price vs entry |
+| `daily_summary.py` | 9:00 AM daily | End-of-day summary |
+| `price_guardian.py` | Every 30 min | Price level check (SAFE/CAUTION/DEFENSIVE/EXIT/EMERGENCY); auto-unstakes at lower tiers |
+| `summary_alert.py` | Every 3 hours | Combined price + balance + portfolio value snapshot |
+
+All alerts go to a Telegram chat you control.
+
+## Requirements
+
+- macOS or Linux
+- Python 3.9+
+- Node 18+ (only if using PM2; cron works without Node)
+- A Bittensor wallet — create with `btcli wallet new_coldkey --wallet.name my_wallet`
+- A Telegram bot — create via [@BotFather](https://t.me/BotFather), get the token
+
+## Quick start
+
+```bash
+git clone <this-repo> tao-investor
+cd tao-investor
+./setup.sh        # interactive: prompts for Telegram + wallet info
+./start.sh start  # launches all bots via PM2
+```
+
+`setup.sh` writes `config/strategy.json` and `config/exit_strategy.json` from your inputs and sends a Telegram test message.
+
+## Manual config
+
+If you'd rather edit by hand, copy the examples and fill in:
+
+```bash
+cp config/strategy.example.json config/strategy.json
+cp config/exit_strategy.example.json config/exit_strategy.json
+$EDITOR config/strategy.json
+```
+
+### `strategy.json` fields
+
+| Field | Description |
+|---|---|
+| `wallet_name` | btcli wallet name |
+| `hotkey` | hotkey name (usually `default`) |
+| `coldkey_address` | SS58 address of your coldkey |
+| `total_tao_deployed` | TAO currently staked |
+| `alerts.telegram_bot_token` | Bot token from @BotFather |
+| `alerts.telegram_chat_id` | Your numeric chat ID |
+| `monitoring.check_interval_minutes` | Monitor frequency (default 60) |
+
+### `exit_strategy.json` fields
+
+Defines price tiers. Tune `principal_tao` (size of position) and `current_price_at_creation` (your entry price). The default tiers (SAFE > $230, CAUTION $205-230, etc.) are calibrated for a ~$256 entry — adjust proportionally for your entry.
+
+## Process management
+
+### Option A — PM2 (recommended)
+```bash
+./start.sh start    # start all
+./start.sh status   # see what's running
+./start.sh logs     # tail logs
+./start.sh stop     # stop all
+```
+
+To survive reboots:
+```bash
+pm2 save
+sudo env PATH=$PATH:$(dirname $(which node)) $(which pm2) startup launchd -u $USER --hp $HOME
+```
+
+### Option B — cron (simpler, no Node needed)
+```bash
+crontab -e
+```
+Add:
+```
+0 * * * * /usr/bin/python3 /path/to/tao-investor/scripts/monitor.py >> /path/to/tao-investor/logs/cron-monitor.log 2>&1
+0 7 * * * /usr/bin/python3 /path/to/tao-investor/scripts/morning_alert.py >> /path/to/tao-investor/logs/cron-morning.log 2>&1
+0 9 * * * /usr/bin/python3 /path/to/tao-investor/scripts/daily_summary.py >> /path/to/tao-investor/logs/cron-summary.log 2>&1
+*/30 * * * * /usr/bin/python3 /path/to/tao-investor/scripts/price_guardian.py >> /path/to/tao-investor/logs/cron-guardian.log 2>&1
+0 */3 * * * /usr/bin/python3 /path/to/tao-investor/scripts/summary_alert.py >> /path/to/tao-investor/logs/cron-summary-alert.log 2>&1
+```
+
+## Dashboard
+
+```bash
+python3 regen_data.py    # rebuilds tao_data.js from logs
+open dashboard.html      # opens in browser (macOS)
+```
+
+Shows current price, portfolio value, P&L, exit level, daily yield, and three time-series charts (price, portfolio value, cumulative staking returns).
+
+To auto-refresh the data file, add this cron line:
+```
+*/15 * * * * /usr/bin/python3 /path/to/tao-investor/regen_data.py
+```
+
+## Security
+
+- **Never commit `config/strategy.json`** — it contains your bot token. Already in `.gitignore`.
+- Your coldkey lives in `~/.bittensor/wallets/<wallet_name>/`, **not** in this repo.
+- The coldkey file is plaintext by default. To encrypt: `btcli wallet regen-coldkey --wallet.name my_wallet` and set a password (back up the mnemonic offline first).
+- Use file permissions: `chmod 600 config/strategy.json`.
+
+## File layout
+
+```
+tao-investor/
+├── config/
+│   ├── strategy.example.json       (committed, no secrets)
+│   ├── exit_strategy.example.json  (committed)
+│   ├── strategy.json               (LOCAL ONLY, .gitignored)
+│   └── exit_strategy.json          (LOCAL ONLY, .gitignored)
+├── scripts/
+│   ├── monitor.py
+│   ├── morning_alert.py
+│   ├── daily_summary.py
+│   ├── price_guardian.py
+│   ├── summary_alert.py
+│   ├── deploy_stake.py             (one-shot allocation deploy)
+│   └── deploy_now.py
+├── logs/                           (.gitignored)
+├── dashboard.html                  (open in browser)
+├── tao_data.js                     (generated by regen_data.py, .gitignored)
+├── ecosystem.config.js             (PM2)
+├── setup.sh                        (interactive setup)
+├── start.sh                        (PM2 wrapper)
+└── regen_data.py
+```
+
+## Disclaimer
+
+This is a personal monitoring tool, not financial advice. The auto-unstake logic in `price_guardian.py` runs in dry-run mode by default — review the code and exit strategy carefully before enabling live unstaking. Crypto is volatile; you can lose money.

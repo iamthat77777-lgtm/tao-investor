@@ -1,0 +1,27 @@
+# Personal config (never commit secrets)
+config/strategy.json
+config/exit_strategy.json
+
+# Local logs and data
+logs/
+tao_data.js
+
+# Wallet QR code (personal)
+*.png
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / Claude
+.claude/
+.vscode/
+.idea/
+
+# PM2
+.pm2/
