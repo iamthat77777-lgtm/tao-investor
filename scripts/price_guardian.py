@@ -49,13 +49,13 @@ def save_state(state):
 
 
 def get_tao_price():
-    """Fetch current TAO price from CoinGecko."""
+    """Fetch current TAO price from Kraken."""
     try:
-        url = "https://api.coingecko.com/api/v3/simple/price?ids=bittensor&vs_currencies=usd"
+        url = "https://api.kraken.com/0/public/Ticker?pair=TAOUSD"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         resp = urllib.request.urlopen(req, timeout=15)
         data = json.loads(resp.read())
-        return data["bittensor"]["usd"]
+        return float(data["result"]["TAOUSD"]["c"][0])
     except Exception as e:
         print(f"Price fetch error: {e}")
         return None
